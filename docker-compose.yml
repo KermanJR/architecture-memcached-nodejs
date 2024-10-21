@@ -1,0 +1,72 @@
+version: "3.8"
+
+services:
+  auth:
+    build: ./auth
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./auth/.env
+    networks:
+      - ecommerce
+
+  order:
+    build: ./order
+    ports:
+      - "3002:3002"
+    depends_on:
+      - mongo
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017/orderdb
+    env_file:
+      - ./order/.env
+    networks:
+      - ecommerce
+
+  product:
+    build: ./product
+    ports:
+      - "3001:3001"
+    depends_on:
+      - mongo
+      - memcached
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017/productdb
+      - MEMCACHED_HOST=memcached
+      - MEMCACHED_PORT=11211
+    env_file:
+      - ./product/.env
+    networks:
+      - ecommerce
+
+  api-gateway:
+    build: ./api-gateway
+    ports:
+      - "3003:3003"
+    networks:
+      - ecommerce
+
+  mongo:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db9
+    networks:
+      - ecommerce
+
+  memcached:
+    image: memcached
+    command: ["memcached", "-m", "64", "-p", "11211", "-u", "memcache", "-c", "1024"]
+    ports:
+      - "11211:11211"
+    networks:
+      - ecommerce
+
+
+networks:
+  ecommerce:
+    driver: bridge
+
+volumes:
+  mongo-data:
